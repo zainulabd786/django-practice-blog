@@ -50,8 +50,5 @@ db.sqlite3
 # Local development settings
 local_settings.py
 
-# Static files (usually managed by a collector)
-static/
-
 # Media files (usually user-uploaded data)
 media/
