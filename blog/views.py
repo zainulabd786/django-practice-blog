@@ -1,6 +1,11 @@
-from django.shortcuts import render, get_object_or_404
-from django.views.generic import ListView, DetailView
+# from django.shortcuts import render, get_object_or_404
+from django.views.generic import ListView
+from django.views import View
 from .models import Post
+from .forms import CommentForm
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 # def starting_page(request):
 #     latest_posts = Post.objects.all().order_by('-date')[:3]
@@ -30,12 +35,31 @@ class PostsView(ListView):
 #     identified_post = get_object_or_404(Post, slug=slug)
 #     return render(request, "blog/post-detail.html", {"post": identified_post, "tags": identified_post.tag.all()})
 
-class PostDetailView(DetailView):
+class PostDetailView(View):
     template_name = "blog/post-detail.html"
-    model = Post
+    # model = Post
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["tags"] = self.object.tag.all()
-        # context["comment_form"] = CommentForm
-        return context
+    def get(self, request, slug):
+        identified_post = Post.objects.get(slug=slug)
+        context = {
+            "post": identified_post,
+            "tags": identified_post.tag.all(),
+            "form": CommentForm()
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, slug):
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = Post.objects.get(slug=slug)
+            comment.save()
+            return HttpResponseRedirect(reverse("post-detail-page", args=[slug]))
+        
+        post = Post.objects.get(slug=slug)
+        context = {
+            "post": post,
+            "tags": post.tag.all(),
+            "form": form
+        }
+        return render(request, self.template_name, context)
